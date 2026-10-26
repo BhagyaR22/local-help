@@ -21,29 +21,68 @@ function Profile() {
     window.location.href = "/";
   }
 
+  const displayName = user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : user?.name || "LocalHelp member";
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+
   if (!getToken()) {
-    return <main className="p-8"><p>Please log in to view your profile.</p><Link className="text-blue-600" to="/login">Go to login</Link></main>;
+    return <main className="profile-page"><section className="profile-container"><h1 className="profile-title">Your profile</h1><p className="profile-subtitle">Please <Link to="/login">log in</Link> to view your account.</p></section></main>;
   }
 
   if (error) {
-    return <main className="p-8"><p>{error}</p><Link className="text-blue-600" to="/login">Go to login</Link></main>;
+    return <main className="profile-page"><section className="profile-container"><h1 className="profile-title">Your profile</h1><p role="alert" className="profile-error">{error}</p><Link className="profile-action-link" to="/login">Go to login</Link></section></main>;
   }
 
-  if (!user) return <main className="p-8">Loading profile...</main>;
+  if (!user) return <main className="profile-page"><div className="profile-container profile-loading">Loading your profile…</div></main>;
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
-      <section className="mt-8 max-w-xl rounded-lg bg-white p-6 shadow">
-        <h2 className="text-2xl font-semibold">{user.firstName ? `${user.firstName} ${user.lastName || ""}` : user.name}</h2>
-        <p className="mt-2 text-gray-600">Username: {user.username ? `@${user.username}` : "Not set"}</p>
-        <p className="mt-2 text-gray-600">Contact number: {user.contactNumber || "Not set"}</p>
-        <p className="mt-3 text-gray-600">Email: {user.email}</p>
-        <p className="mt-2 text-gray-600">Reputation: {user.reputation}</p>
-        <button onClick={logout} className="mt-6 rounded bg-gray-800 px-5 py-2 text-white">
-          Log out
-        </button>
-      </section>
+    <main className="profile-page">
+      <div className="profile-container">
+        <p className="section-kicker">Your LocalHelp account</p>
+        <h1 className="profile-title">My profile</h1>
+        <p className="profile-subtitle">Manage your details and see how you appear in the community.</p>
+
+        <section className="profile-card" aria-label="Profile information">
+          <div className="profile-banner">
+            <div className="profile-avatar" aria-label={`Initials: ${initials}`}>{initials}</div>
+            <div className="profile-identity">
+              <span className="profile-member-label">Community member</span>
+              <h2>{displayName}</h2>
+              <p>{user.username ? `@${user.username}` : "Username not set"}</p>
+            </div>
+            <div className="profile-reputation">
+              <span className="profile-star" aria-hidden="true">★</span>
+              <span><strong>{user.reputationCount ? Number(user.reputation).toFixed(1) : "—"}</strong><small>{user.reputationCount || 0} reviews</small></span>
+            </div>
+          </div>
+
+          <div className="profile-details">
+            <h3>Account details</h3>
+            <div className="profile-detail-grid">
+              <div className="profile-detail">
+                <span className="profile-detail-icon" aria-hidden="true">✉</span>
+                <span><small>Email address</small><strong>{user.email}</strong></span>
+              </div>
+              <div className="profile-detail">
+                <span className="profile-detail-icon" aria-hidden="true">☎</span>
+                <span><small>Contact number</small><strong>{user.contactNumber || "Not set"}</strong></span>
+              </div>
+              <div className="profile-detail">
+                <span className="profile-detail-icon" aria-hidden="true">⌂</span>
+                <span><small>Username</small><strong>{user.username ? `@${user.username}` : "Not set"}</strong></span>
+              </div>
+              <div className="profile-detail">
+                <span className="profile-detail-icon" aria-hidden="true">🤝</span>
+                <span><small>Community reputation</small><strong>{user.reputationCount ? `${Number(user.reputation).toFixed(1)} / 5 from ${user.reputationCount} review${user.reputationCount === 1 ? "" : "s"}` : "No reviews yet"}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="profile-card-footer">
+            <p>Your contact number is shared only when a service connection is accepted.</p>
+            <button type="button" onClick={logout} className="profile-logout">Log out</button>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

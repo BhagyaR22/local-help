@@ -25,6 +25,7 @@ function Navbar() {
           {loggedIn ? (
             <>
               <Link className="nav-link" to="/my-tasks">My activity</Link>
+              <Link className="nav-link" to="/inquiries">Inquiries</Link>
               <Link className="nav-link" to="/profile">Profile</Link>
               <button type="button" onClick={logout} className="nav-link nav-logout">Log out</button>
             </>

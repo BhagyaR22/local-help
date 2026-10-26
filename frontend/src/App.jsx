@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Tasks from "./pages/Tasks";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import Inquiries from "./pages/Inquiries";
 import Navbar from "./components/Navbar";
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         <Route path="/profile" element={<Profile />} />
+        <Route path="/inquiries" element={<Inquiries />} />
         <Route path="*" element={<main className="p-8"><h1 className="text-2xl font-bold">Page not found</h1><Link className="mt-4 inline-block text-blue-600" to="/">Return home</Link></main>} />
       </Routes>
       <footer className="app-footer">

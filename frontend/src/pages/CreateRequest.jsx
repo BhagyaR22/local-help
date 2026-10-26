@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getToken, apiRequest } from "../services/api";
 import { SERVICE_CATEGORIES } from "../data/serviceCategories";
 
 function CreateRequest() {
-  const [mode, setMode] = useState("request");
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState(searchParams.get("mode") === "offer" ? "offer" : "request");
   const [form, setForm] = useState({ title: "", description: "", category: "", location: "", dueDate: "" });
   const [offerForm, setOfferForm] = useState({ category: "Cleaning", price: "", location: "", description: "" });
   const [error, setError] = useState("");

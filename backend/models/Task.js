@@ -43,6 +43,20 @@ const TaskSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             default: null
+        },
+
+        rating: {
+            type: Number,
+            min: 1,
+            max: 5,
+            default: null
+        },
+
+        ratingReview: {
+            type: String,
+            trim: true,
+            maxlength: 500,
+            default: ""
         }
     },
     {

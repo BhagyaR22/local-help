@@ -30,28 +30,31 @@ function Login() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-3xl font-bold text-gray-800">Login</h1>
-      {location.state?.message && <p className="mt-4 text-green-700">{location.state.message}</p>}
-      <form onSubmit={handleSubmit} className="mt-8 max-w-xl rounded-lg bg-white p-6 shadow">
-        <label className="block font-semibold">Email</label>
-        <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-          className="mt-2 w-full rounded border p-3" />
+    <main className="login-page">
+      <section className="login-container">
+        <h1 className="login-heading">Welcome back</h1>
+        <p className="login-intro">Log in to continue with LocalHelp.</p>
+        {location.state?.message && <p className="login-message">{location.state.message}</p>}
+        <form onSubmit={handleSubmit} className="login-card">
+          <label className="login-field">Email
+            <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="login-input" />
+          </label>
 
-        <label className="mt-6 block font-semibold">Password</label>
-        <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-          className="mt-2 w-full rounded border p-3" />
+          <label className="login-field">Password
+            <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="login-input" />
+          </label>
 
-        {error && <p role="alert" className="mt-4 text-red-600">{error}</p>}
+          {error && <p role="alert" className="login-error">{error}</p>}
 
-        <button disabled={busy} className="mt-6 rounded-lg bg-blue-600 px-6 py-3 text-white disabled:opacity-60">
+          <button disabled={busy} className="login-submit">
           {busy ? "Logging in..." : "Login"}
-        </button>
+          </button>
 
-        <p className="mt-6 text-gray-600">
-          Don't have an account? <Link to="/register" className="font-semibold text-blue-600">Register</Link>
-        </p>
-      </form>
+          <p className="login-register">
+            Don't have an account? <Link to="/register">Register</Link>
+          </p>
+        </form>
+      </section>
     </main>
   );
 }

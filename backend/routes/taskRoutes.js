@@ -7,6 +7,7 @@ const {
   deleteTask,
   claimTask,
   completeTask,
+  rateTaskHelper,
 } = require("../controllers/taskController");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -19,5 +20,6 @@ router.patch("/:id", authMiddleware, updateTask);
 router.delete("/:id", authMiddleware, deleteTask);
 router.put("/:id/claim", authMiddleware, claimTask);
 router.put("/:id/complete", authMiddleware, completeTask);
+router.patch("/:id/rating", authMiddleware, rateTaskHelper);
 
 module.exports = router;

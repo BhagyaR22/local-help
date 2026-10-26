@@ -11,6 +11,7 @@ function publicUser(user, includeContactNumber = false) {
     name: user.name,
     email: user.email,
     reputation: user.reputation,
+    reputationCount: user.reputationCount || 0,
   };
   if (includeContactNumber) result.contactNumber = user.contactNumber;
   return result;

@@ -20,6 +20,7 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
     password: { type: String, required: true },
     reputation: { type: Number, default: 0 },
+    reputationCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

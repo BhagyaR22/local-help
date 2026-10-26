@@ -14,6 +14,8 @@ function TaskCard({ task, onChanged }) {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [rating, setRating] = useState("5");
+  const [review, setReview] = useState("");
   const [form, setForm] = useState({
     title: task.title,
     description: task.description,
@@ -58,6 +60,14 @@ function TaskCard({ task, onChanged }) {
     }
   }
 
+  function submitRating(event) {
+    event.preventDefault();
+    runAction(`/tasks/${task._id}/rating`, {
+      method: "PATCH",
+      body: JSON.stringify({ rating: Number(rating), review }),
+    });
+  }
+
   return (
     <article className="rounded-lg bg-white p-6 shadow">
       {editing ? (
@@ -87,6 +97,32 @@ function TaskCard({ task, onChanged }) {
             {task.status === "claimed" && isClaimer && <button disabled={busy} onClick={() => runAction(`/tasks/${task._id}/complete`, { method: "PUT" })} className="rounded bg-green-700 px-5 py-2 text-white disabled:opacity-60">Mark Complete</button>}
             {task.status === "open" && isOwner && <><button onClick={() => setEditing(true)} className="rounded border border-blue-600 px-4 py-2 text-blue-700">Edit</button><button disabled={busy} onClick={deleteTask} className="rounded border border-red-600 px-4 py-2 text-red-700 disabled:opacity-60">Delete</button></>}
           </div>
+          {task.status === "completed" && isOwner && (
+            task.rating ? (
+              <div className="task-rating-summary">
+                <strong>Your rating: {"★".repeat(task.rating)}{"☆".repeat(5 - task.rating)} ({task.rating}/5)</strong>
+                {task.ratingReview && <p>{task.ratingReview}</p>}
+              </div>
+            ) : (
+              <form className="task-rating-form" onSubmit={submitRating}>
+                <h3>Rate your helper</h3>
+                <p>Your review helps neighbors choose trusted helpers.</p>
+                <label>Rating
+                  <select value={rating} onChange={(event) => setRating(event.target.value)}>
+                    <option value="5">5 stars - Excellent</option>
+                    <option value="4">4 stars - Great</option>
+                    <option value="3">3 stars - Good</option>
+                    <option value="2">2 stars - Fair</option>
+                    <option value="1">1 star - Poor</option>
+                  </select>
+                </label>
+                <label>Review (optional)
+                  <textarea maxLength={500} value={review} onChange={(event) => setReview(event.target.value)} placeholder="Share a few words about the help you received." />
+                </label>
+                <button disabled={busy} className="task-rating-submit">{busy ? "Saving…" : "Submit rating"}</button>
+              </form>
+            )
+          )}
         </>
       )}
       {message && <p role="alert" className="mt-3 text-red-600">{message}</p>}
