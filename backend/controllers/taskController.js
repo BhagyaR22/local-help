@@ -36,7 +36,7 @@ const createTask = async (req, res) => {
       postedBy: req.user.userId,
     });
 
-    await task.populate("postedBy", "name email");
+    await task.populate("postedBy", "name username");
 
     res.status(201).json({
       message: "Task created successfully",
@@ -74,7 +74,7 @@ const getTasks = async (req, res) => {
 
     const [tasks, totalItems] = await Promise.all([
       Task.find(filter)
-        .populate("postedBy", "name")
+        .populate("postedBy", "name username")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -131,7 +131,7 @@ const updateTask = async (req, res) => {
       { _id: req.params.id, postedBy: req.user.userId, status: "open" },
       { $set: updates },
       { new: true, runValidators: true }
-    ).populate("postedBy", "name email");
+    ).populate("postedBy", "name username");
 
     if (!task) {
       return res.status(404).json({ message: "Open task not found or you are not its owner" });
@@ -183,7 +183,7 @@ const getMyTasks = async (req, res) => {
       filter.$and = [{ $or: [{ title: match }, { description: match }, { location: match }, { category: match }] }];
     }
 
-    const [tasks, totalItems] = await Promise.all([
+    const [tasks, totalItems, activeItems] = await Promise.all([
       Task.find(filter)
         .populate("postedBy", "name firstName lastName username contactNumber")
         .populate("claimedBy", "name firstName lastName username")
@@ -191,6 +191,7 @@ const getMyTasks = async (req, res) => {
         .skip(skip)
         .limit(limit),
       Task.countDocuments(filter),
+      Task.countDocuments({ ...filter, status: { $ne: "completed" } }),
     ]);
 
     const visibleTasks = tasks.map((task) => {
@@ -201,7 +202,7 @@ const getMyTasks = async (req, res) => {
       return item;
     });
 
-    res.json({ tasks: visibleTasks, pagination: paginationInfo(page, limit, totalItems) });
+    res.json({ tasks: visibleTasks, activeItems, pagination: paginationInfo(page, limit, totalItems) });
   } catch (error) {
     res.status(500).json({ message: "Failed to get your tasks", error: error.message });
   }
@@ -223,7 +224,7 @@ const claimTask = async (req, res) => {
       { new: true, runValidators: true }
     )
       .populate("postedBy", "name firstName lastName username contactNumber")
-      .populate("claimedBy", "name");
+      .populate("claimedBy", "name username");
 
     if (!task) {
       return res.status(400).json({
@@ -290,8 +291,8 @@ const completeTask = async (req, res) => {
       { $set: { status: "completed" } },
       { new: true, runValidators: true }
     )
-      .populate("postedBy", "name")
-      .populate("claimedBy", "name");
+      .populate("postedBy", "name username")
+      .populate("claimedBy", "name username");
 
     if (!task) {
       return res.status(400).json({

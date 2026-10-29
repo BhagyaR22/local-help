@@ -30,7 +30,7 @@ const getServiceOffers = async (req, res) => {
 
     const [offers, totalItems] = await Promise.all([
       ServiceOffer.find(filter)
-        .populate("provider", "name reputation reputationCount")
+        .populate("provider", "name username reputation reputationCount")
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -73,7 +73,7 @@ const saveServiceOffer = async (req, res) => {
         },
       },
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
-    ).populate("provider", "name");
+    ).populate("provider", "name username");
 
     res.status(200).json({ message: "Service price saved", offer });
   } catch (error) {
@@ -150,7 +150,7 @@ const getMyServiceInquiries = async (req, res) => {
     })
       .populate("offer", "category price location")
       .populate("requester", "name username contactNumber")
-      .populate("provider", "name contactNumber")
+      .populate("provider", "name username contactNumber")
       .sort({ createdAt: -1 })
       .lean();
 

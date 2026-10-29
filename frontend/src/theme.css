@@ -35,6 +35,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .nav-account { justify-self: end; gap: 1.8rem; }
 .nav-link { border: 0; background: transparent; color: #4b5870; font-size: 1rem; font-weight: 500; text-decoration: none; white-space: nowrap; }
 .nav-link:hover { color: var(--blue); }
+.nav-item-link { display: inline-flex; align-items: center; gap: .38rem; }
+.nav-message-wrap { position: relative; display: inline-flex; align-items: center; }
+.nav-message-icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nav-count { position: absolute; top: -.52rem; right: -.62rem; display: inline-flex; min-width: 17px; height: 17px; align-items: center; justify-content: center; border: 1.5px solid white; border-radius: 999px; background: #e5484d; padding: 0 .22rem; color: white; font-size: .62rem; font-weight: 800; line-height: 1; }
 .nav-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 60px; border-radius: 16px; background: var(--blue); padding: 0 1.6rem; color: white; font-weight: 700; text-decoration: none; box-shadow: 0 6px 12px rgba(29,94,255,.16); }
 .nav-cta:hover { background: var(--blue-dark); transform: translateY(-1px); box-shadow: 0 10px 20px rgba(29,94,255,.22); }
 .nav-logout { cursor: pointer; }
@@ -131,7 +135,7 @@ form input:focus, form select:focus, form textarea:focus, main > div > input:foc
   .brand-name { font-size: 1.3rem; }
   .nav-menu { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; gap: 1.25rem; overflow-x: auto; padding: .3rem 0 .55rem; }
   .nav-account { gap: .8rem; }
-  .nav-account > .nav-link:not(:first-child) { display: none; }
+  .nav-account > .nav-link:nth-child(n+3) { display: none; }
   .nav-link { font-size: .88rem; }
   .nav-cta { min-height: 44px; border-radius: 12px; padding: 0 .9rem; font-size: .88rem; }
   .hero-panel { grid-template-columns: 1fr; gap: 1.3rem; min-height: 0; padding: 2.2rem 1.25rem 2.2rem; }

@@ -104,7 +104,7 @@ function TaskCard({ task, onChanged }) {
           <p className="font-semibold text-emerald-700">Budget offered: {task.budget === undefined || task.budget === null ? "Not set" : `LKR ${Number(task.budget).toLocaleString("en-LK", { maximumFractionDigits: 0 })}`}</p>
           {task.dueDate && <p className="text-gray-600">Needed by: {new Date(task.dueDate).toLocaleDateString()}</p>}
           <p className="mt-2 whitespace-pre-wrap text-gray-700">{task.description}</p>
-          <p className="mt-2 text-sm text-gray-500">Posted by: {task.postedBy?.name || "Unknown"}</p>
+          <p className="mt-2 text-sm text-gray-500">Posted by: {task.postedBy?.name || "Unknown"}{task.postedBy?.username && <span> · @{task.postedBy.username}</span>}</p>
           {isClaimer && task.postedBy?.contactNumber && <p className="mt-2 text-sm font-semibold text-blue-700">Contact requester: <a href={`tel:${task.postedBy.contactNumber}`} className="underline">{task.postedBy.contactNumber}</a></p>}
 
           <div className="mt-4 flex flex-wrap gap-3">

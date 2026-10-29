@@ -23,7 +23,7 @@ function InquiryCard({ inquiry, onRespond, onComplete, onRate, busy }) {
         </div>
         <span className={`inquiry-status ${inquiry.status}`}>{inquiry.status}</span>
       </div>
-      <p className="inquiry-person">{isProvider ? "Inquiry from" : "Provider"}: {otherPerson?.name || "LocalHelp member"}</p>
+      <p className="inquiry-person">{isProvider ? "Inquiry from" : "Provider"}: {otherPerson?.name || "LocalHelp member"}{otherPerson?.username && <span> · @{otherPerson.username}</span>}</p>
       <p className="inquiry-message">{inquiry.message}</p>
       {inquiry.status === "pending" && isProvider && (
         <div className="inquiry-actions">
