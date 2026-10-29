@@ -6,7 +6,7 @@ import { SERVICE_CATEGORIES } from "../data/serviceCategories";
 function CreateRequest() {
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState(searchParams.get("mode") === "offer" ? "offer" : "request");
-  const [form, setForm] = useState({ title: "", description: "", category: "", location: "", dueDate: "" });
+  const [form, setForm] = useState({ title: "", description: "", category: "", location: "", dueDate: "", budget: "" });
   const [offerForm, setOfferForm] = useState({ category: "Cleaning", price: "", location: "", description: "" });
   const [error, setError] = useState("");
   const [offerError, setOfferError] = useState("");
@@ -69,18 +69,18 @@ function CreateRequest() {
       <div className="request-container">
         <p className="section-kicker">One account, both ways to help</p>
         <h1 className="request-heading">How can LocalHelp help you?</h1>
-        <p className="request-intro">Post a task you need done, or share a service and the price you charge. You can do both.</p>
+        <p className="request-intro">Request help with your budget, or list a service with your price per job. You can do both.</p>
 
         <div className="request-tabs" role="tablist" aria-label="Choose a service action">
           <button type="button" role="tab" aria-selected={mode === "request"} className={mode === "request" ? "request-tab active" : "request-tab"} onClick={() => setMode("request")}>Request help</button>
-          <button type="button" role="tab" aria-selected={mode === "offer"} className={mode === "offer" ? "request-tab active" : "request-tab"} onClick={() => setMode("offer")}>Share a service & price</button>
+          <button type="button" role="tab" aria-selected={mode === "offer"} className={mode === "offer" ? "request-tab active" : "request-tab"} onClick={() => setMode("offer")}>Offer a service</button>
         </div>
 
         {mode === "request" ? (
           <section className="request-form-card" role="tabpanel">
             <div className="request-form-heading">
               <span className="request-form-icon" aria-hidden="true">⌂</span>
-              <div><h2>Request a service</h2><p>Tell your community what you need. Your open request will appear in Find Services.</p></div>
+              <div><h2>Request help</h2><p>Tell neighbors what you need and the budget you are offering. It will appear under People needing help.</p></div>
             </div>
             <form onSubmit={handleSubmit} className="request-form-grid">
               <label>What do you need help with?
@@ -95,6 +95,9 @@ function CreateRequest() {
               <label>Your area
                 <input required maxLength={120} value={form.location} onChange={(e) => update("location", e.target.value)} placeholder="e.g. Colombo" />
               </label>
+              <label>Budget offered (LKR)
+                <input required type="number" min="0" step="1" value={form.budget} onChange={(e) => update("budget", e.target.value)} placeholder="e.g. 2500" />
+              </label>
               <label>Needed by (optional)
                 <input type="date" min={new Date().toISOString().slice(0, 10)} value={form.dueDate} onChange={(e) => update("dueDate", e.target.value)} />
               </label>
@@ -104,7 +107,7 @@ function CreateRequest() {
               <div className="request-form-actions request-full-width">
                 {error && <p role="alert" className="request-error">{error}</p>}
                 {!getToken() && <p className="request-login-note">Please <Link to="/login">log in</Link> to post a request.</p>}
-                <button disabled={busy} className="request-submit">{busy ? "Submitting…" : "Post service request"}</button>
+                <button disabled={busy} className="request-submit">{busy ? "Submitting…" : "Post help request"}</button>
               </div>
             </form>
           </section>
@@ -112,7 +115,7 @@ function CreateRequest() {
           <section className="request-form-card" role="tabpanel">
             <div className="request-form-heading">
               <span className="request-form-icon price-icon" aria-hidden="true">₹</span>
-              <div><h2>Share a service & price</h2><p>Let neighbors know what you can do and your price per job. Everyone can post a service.</p></div>
+              <div><h2>Offer a service</h2><p>Let neighbors know what you can do and your price per job. Everyone can post a service.</p></div>
             </div>
             <form onSubmit={handleOfferSubmit} className="request-form-grid">
               <label>Service category
@@ -133,7 +136,7 @@ function CreateRequest() {
                 {offerError && <p role="alert" className="request-error">{offerError}</p>}
                 {offerMessage && <p role="status" className="request-success">{offerMessage}</p>}
                 {!getToken() && <p className="request-login-note">Please <Link to="/login">log in</Link> to share a service.</p>}
-                <button disabled={offerBusy} className="request-submit">{offerBusy ? "Saving…" : "Publish my service price"}</button>
+                <button disabled={offerBusy} className="request-submit">{offerBusy ? "Saving…" : "Publish my service"}</button>
               </div>
             </form>
           </section>

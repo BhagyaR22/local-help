@@ -1,10 +1,12 @@
 const Task = require("../models/Task");
-const User = require("../models/User");
 const allowedCategories = require("../constants/serviceCategories");
+const { parsePagination, paginationInfo, escapeRegex } = require("../utils/pagination");
+const recalculateReputation = require("../utils/recalculateReputation");
 
 const createTask = async (req, res) => {
   try {
-    const { title, description, category, location, dueDate } = req.body;
+    const { title, description, category, location, dueDate, budget } = req.body;
+    const offeredBudget = Number(budget);
 
     if (![title, description, category, location].every(
       (value) => typeof value === "string" && value.trim()
@@ -12,6 +14,9 @@ const createTask = async (req, res) => {
       return res.status(400).json({
         message: "Title, description, category, and location are required",
       });
+    }
+    if (budget === undefined || budget === null || String(budget).trim() === "" || !Number.isFinite(offeredBudget) || offeredBudget < 0) {
+      return res.status(400).json({ message: "Enter a valid offered budget of LKR 0 or more" });
     }
     if (!allowedCategories.includes(category.trim())) {
       return res.status(400).json({ message: "Choose a valid service category" });
@@ -27,6 +32,7 @@ const createTask = async (req, res) => {
       category: category.trim(),
       location: location.trim(),
       dueDate: dueDate || null,
+      budget: offeredBudget,
       postedBy: req.user.userId,
     });
 
@@ -49,27 +55,52 @@ const createTask = async (req, res) => {
 
 const getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find()
-      .populate("postedBy", "name email")
-      .populate("claimedBy", "name email")
-      .sort({ createdAt: -1 });
+    const { page, limit, skip } = parsePagination(req.query);
+    const filter = { status: "open" };
+    if (req.user?.userId) filter.postedBy = { $ne: req.user.userId };
 
-    res.json({ tasks });
+    if (req.query.category) {
+      if (!allowedCategories.includes(req.query.category)) {
+        return res.status(400).json({ message: "Choose a valid service category" });
+      }
+      filter.category = req.query.category;
+    }
+
+    const search = typeof req.query.search === "string" ? req.query.search.trim().slice(0, 100) : "";
+    if (search) {
+      const match = new RegExp(escapeRegex(search), "i");
+      filter.$or = [{ title: match }, { description: match }, { location: match }, { category: match }];
+    }
+
+    const [tasks, totalItems] = await Promise.all([
+      Task.find(filter)
+        .populate("postedBy", "name")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Task.countDocuments(filter),
+    ]);
+
+    res.json({ tasks, pagination: paginationInfo(page, limit, totalItems) });
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to get tasks",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Failed to get tasks", error: error.message });
   }
 };
-
 const updateTask = async (req, res) => {
   try {
-    const allowedFields = ["title", "description", "category", "location", "dueDate"];
+    const allowedFields = ["title", "description", "category", "location", "dueDate", "budget"];
     const updates = {};
 
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
+        if (field === "budget") {
+          const amount = Number(req.body[field]);
+          if (req.body[field] === "" || !Number.isFinite(amount) || amount < 0) {
+            return res.status(400).json({ message: "Enter a valid offered budget of LKR 0 or more" });
+          }
+          updates.budget = amount;
+          continue;
+        }
         if (field === "dueDate" && (req.body[field] === "" || req.body[field] === null)) {
           updates[field] = null;
           continue;
@@ -138,15 +169,29 @@ const deleteTask = async (req, res) => {
 
 const getMyTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({
-      $or: [
-        { postedBy: req.user.userId },
-        { claimedBy: req.user.userId },
-      ],
-    })
-      .populate("postedBy", "name email firstName lastName username contactNumber")
-      .populate("claimedBy", "name email firstName lastName username")
-      .sort({ createdAt: -1 });
+    const { page, limit, skip } = parsePagination(req.query);
+    const filter = { $or: [{ postedBy: req.user.userId }, { claimedBy: req.user.userId }] };
+    if (req.query.category) {
+      if (!allowedCategories.includes(req.query.category)) {
+        return res.status(400).json({ message: "Choose a valid service category" });
+      }
+      filter.category = req.query.category;
+    }
+    const search = typeof req.query.search === "string" ? req.query.search.trim().slice(0, 100) : "";
+    if (search) {
+      const match = new RegExp(escapeRegex(search), "i");
+      filter.$and = [{ $or: [{ title: match }, { description: match }, { location: match }, { category: match }] }];
+    }
+
+    const [tasks, totalItems] = await Promise.all([
+      Task.find(filter)
+        .populate("postedBy", "name firstName lastName username contactNumber")
+        .populate("claimedBy", "name firstName lastName username")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Task.countDocuments(filter),
+    ]);
 
     const visibleTasks = tasks.map((task) => {
       const item = task.toObject();
@@ -156,7 +201,7 @@ const getMyTasks = async (req, res) => {
       return item;
     });
 
-    res.json({ tasks: visibleTasks });
+    res.json({ tasks: visibleTasks, pagination: paginationInfo(page, limit, totalItems) });
   } catch (error) {
     res.status(500).json({ message: "Failed to get your tasks", error: error.message });
   }
@@ -177,8 +222,8 @@ const claimTask = async (req, res) => {
       },
       { new: true, runValidators: true }
     )
-      .populate("postedBy", "name email firstName lastName username contactNumber")
-      .populate("claimedBy", "name email");
+      .populate("postedBy", "name firstName lastName username contactNumber")
+      .populate("claimedBy", "name");
 
     if (!task) {
       return res.status(400).json({
@@ -198,6 +243,42 @@ const claimTask = async (req, res) => {
   }
 };
 
+const cancelTask = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+    if (task.status !== "claimed") {
+      return res.status(400).json({ message: "Only claimed tasks can be cancelled or released" });
+    }
+
+    const currentUserId = String(req.user.userId);
+    let updatedTask;
+    let message;
+    if (String(task.postedBy) === currentUserId) {
+      updatedTask = await Task.findOneAndUpdate(
+        { _id: task._id, postedBy: req.user.userId, status: "claimed" },
+        { $set: { status: "cancelled" } },
+        { new: true }
+      );
+      message = "Your request was cancelled";
+    } else if (String(task.claimedBy) === currentUserId) {
+      updatedTask = await Task.findOneAndUpdate(
+        { _id: task._id, claimedBy: req.user.userId, status: "claimed" },
+        { $set: { status: "open", claimedBy: null } },
+        { new: true }
+      );
+      message = "You released the task; it is open for another helper";
+    } else {
+      return res.status(403).json({ message: "Only the requester or assigned helper can change this task" });
+    }
+
+    if (!updatedTask) return res.status(409).json({ message: "The task changed before your action completed" });
+    res.json({ message, task: updatedTask });
+  } catch (error) {
+    if (error.name === "CastError") return res.status(400).json({ message: "Invalid task ID" });
+    res.status(500).json({ message: "Failed to cancel or release task", error: error.message });
+  }
+};
 const completeTask = async (req, res) => {
   try {
     const task = await Task.findOneAndUpdate(
@@ -209,8 +290,8 @@ const completeTask = async (req, res) => {
       { $set: { status: "completed" } },
       { new: true, runValidators: true }
     )
-      .populate("postedBy", "name email")
-      .populate("claimedBy", "name email");
+      .populate("postedBy", "name")
+      .populate("claimedBy", "name");
 
     if (!task) {
       return res.status(400).json({
@@ -266,23 +347,13 @@ const rateTaskHelper = async (req, res) => {
       return res.status(409).json({ message: "You have already rated the helper for this task" });
     }
 
-    const completedRatings = await Task.find({
-      claimedBy: task.claimedBy,
-      status: "completed",
-      rating: { $gte: 1, $lte: 5 },
-    }).select("rating").lean();
-    const averageRating = completedRatings.reduce((sum, item) => sum + item.rating, 0) / completedRatings.length;
-    const reputation = Math.round(averageRating * 100) / 100;
-
-    await User.findByIdAndUpdate(task.claimedBy, {
-      $set: { reputation, reputationCount: completedRatings.length },
-    });
+    const reputationSummary = await recalculateReputation(task.claimedBy);
 
     res.json({
       message: "Your rating was saved",
       rating: task.rating,
-      reputation,
-      reputationCount: completedRatings.length,
+      reputation: reputationSummary.reputation,
+      reputationCount: reputationSummary.reputationCount,
     });
   } catch (error) {
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid task ID" });
@@ -297,7 +368,7 @@ module.exports = {
   updateTask,
   deleteTask,
   claimTask,
+  cancelTask,
   completeTask,
   rateTaskHelper,
 };
-

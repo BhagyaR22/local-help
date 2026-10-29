@@ -31,7 +31,7 @@ function ServiceOfferCard({ offer, inquiry }) {
     <article className="service-offer-card">
       <div className="service-offer-topline">
         <span className="service-offer-category">{offer.category}</span>
-        <strong className="service-offer-price">LKR {price}</strong>
+        <strong className="service-offer-price">LKR {price} / job</strong>
       </div>
       <p className="service-offer-provider">Offered by {offer.provider?.name || "Local provider"}</p>
       {offer.provider?.reputationCount > 0 && <p className="service-offer-rating">★ {Number(offer.provider.reputation).toFixed(1)} · {offer.provider.reputationCount} review{offer.provider.reputationCount === 1 ? "" : "s"}</p>}
@@ -42,6 +42,8 @@ function ServiceOfferCard({ offer, inquiry }) {
           <><span className="inquiry-status pending">Request sent</span><Link className="inquiry-card-link" to="/inquiries">View inquiry</Link></>
         ) : inquiryStatus === "accepted" ? (
           <><span className="inquiry-status accepted">Accepted</span><Link className="inquiry-card-link" to="/inquiries">View contact</Link></>
+        ) : inquiryStatus === "completed" ? (
+          <><span className="inquiry-status completed">Completed</span><Link className="inquiry-card-link" to="/inquiries">View rating</Link></>
         ) : (
           <>
             {inquiryStatus === "declined" && <span className="inquiry-status declined">Declined</span>}

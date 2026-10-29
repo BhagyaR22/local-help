@@ -25,9 +25,12 @@ const ServiceInquirySchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "accepted", "declined"],
+      enum: ["pending", "accepted", "declined", "completed"],
       default: "pending",
     },
+    completedAt: { type: Date, default: null },
+    rating: { type: Number, min: 1, max: 5, default: null },
+    ratingReview: { type: String, trim: true, maxlength: 500, default: "" },
   },
   { timestamps: true }
 );

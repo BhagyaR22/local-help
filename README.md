@@ -10,13 +10,13 @@ LocalHelp is a React/Vite frontend with a Node.js/Express API and MongoDB Atlas.
 ## Configure the backend
 
 1. In `backend`, copy `.env.example` to `.env`.
-2. Set `MONGO_URI` to your MongoDB Atlas connection string and `JWT_SECRET` to a long random secret.
+2. Set `MONGO_URI` to your normal MongoDB Atlas connection string and `JWT_SECRET` to a long random secret.
 
 ## Run locally
 
 Open two terminals from the project folder.
 
-Terminal 1:
+Terminal 1 (normal database):
 
 ```sh
 cd backend
@@ -33,6 +33,24 @@ npm run dev
 ```
 
 Open the local URL printed by Vite, usually `http://localhost:5173`.
+
+## Generate separate test data
+
+Create a second database in MongoDB Atlas for testing, such as `localhelp_test`. Copy your Atlas connection string into `backend/.env` as `TEST_MONGO_URI`, changing its database name to `localhelp_test`. Keep the existing `MONGO_URI` unchanged. Do not use the same database name for both values.
+
+From the `backend` folder, seed sample data:
+
+```sh
+npm run seed:test
+```
+
+By default, this creates 20 test users, 200 service listings, 1,000 tasks, and 300 inquiries. You can choose different amounts:
+
+```sh
+npm run seed:test -- --users 500 --offers 1000 --tasks 10000 --inquiries 2000
+```
+
+The script refuses to run unless the `TEST_MONGO_URI` database name contains `test`. Re-running it replaces records belonging to its own `lh_test_` sample users in that test database. All generated users use the password `LocalHelpTest123!`; their usernames are `lh_test_00001`, `lh_test_00002`, and so on. These are fake test accounts. Do not put real contact details or passwords in generated data. To run the website against this test database, stop the normal backend and run `npm run start:test` from `backend`. This only switches the running backend to `TEST_MONGO_URI`; the regular `npm start` continues using `MONGO_URI`.
 
 ## Verify
 

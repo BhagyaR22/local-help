@@ -22,6 +22,12 @@ const TaskSchema = new mongoose.Schema(
             required: true
         },
 
+        budget: {
+            type: Number,
+            min: [0, "Budget cannot be negative"],
+            required: true
+        },
+
         dueDate: {
             type: Date,
             default: null
@@ -29,7 +35,7 @@ const TaskSchema = new mongoose.Schema(
 
         status: {
             type: String,
-            enum: ["open", "claimed", "completed"],
+            enum: ["open", "claimed", "completed", "cancelled"],
             default: "open"
         },
 
@@ -63,5 +69,7 @@ const TaskSchema = new mongoose.Schema(
         timestamps: true
     }
 );
+
+TaskSchema.index({ status: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Task", TaskSchema);

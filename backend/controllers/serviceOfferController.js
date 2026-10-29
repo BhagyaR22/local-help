@@ -1,22 +1,47 @@
 const ServiceOffer = require("../models/ServiceOffer");
 const ServiceInquiry = require("../models/ServiceInquiry");
 const allowedCategories = require("../constants/serviceCategories");
+const User = require("../models/User");
+const { parsePagination, paginationInfo, escapeRegex } = require("../utils/pagination");
+const recalculateReputation = require("../utils/recalculateReputation");
 
 const getServiceOffers = async (req, res) => {
   try {
-    const offers = await ServiceOffer.find()
-      .populate("provider", "name reputation reputationCount")
-      .sort({ updatedAt: -1 });
+    const { page, limit, skip } = parsePagination(req.query);
+    const filter = {};
+    if (req.query.category) {
+      if (!allowedCategories.includes(req.query.category)) {
+        return res.status(400).json({ message: "Choose a valid service category" });
+      }
+      filter.category = req.query.category;
+    }
 
-    res.json({ offers });
+    const search = typeof req.query.search === "string" ? req.query.search.trim().slice(0, 100) : "";
+    if (search) {
+      const match = new RegExp(escapeRegex(search), "i");
+      const providerIds = await User.find({ name: match }).distinct("_id");
+      filter.$or = [
+        { category: match },
+        { description: match },
+        { location: match },
+        { provider: { $in: providerIds } },
+      ];
+    }
+
+    const [offers, totalItems] = await Promise.all([
+      ServiceOffer.find(filter)
+        .populate("provider", "name reputation reputationCount")
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      ServiceOffer.countDocuments(filter),
+    ]);
+
+    res.json({ offers, pagination: paginationInfo(page, limit, totalItems) });
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to get service prices",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Failed to get service prices", error: error.message });
   }
 };
-
 const saveServiceOffer = async (req, res) => {
   try {
     const { category, price, description = "", location = "" } = req.body;
@@ -131,7 +156,7 @@ const getMyServiceInquiries = async (req, res) => {
 
     const visibleInquiries = inquiries.map((inquiry) => {
       const isProvider = String(inquiry.provider?._id) === String(req.user.userId);
-      const contactNumber = inquiry.status === "accepted"
+      const contactNumber = ["accepted", "completed"].includes(inquiry.status)
         ? (isProvider ? inquiry.requester?.contactNumber : inquiry.provider?.contactNumber)
         : null;
 
@@ -171,11 +196,63 @@ const respondToServiceInquiry = async (req, res) => {
   }
 };
 
+const completeServiceInquiry = async (req, res) => {
+  try {
+    const inquiry = await ServiceInquiry.findOneAndUpdate(
+      { _id: req.params.id, provider: req.user.userId, status: "accepted" },
+      { $set: { status: "completed", completedAt: new Date() } },
+      { new: true, runValidators: true }
+    );
+    if (!inquiry) {
+      return res.status(404).json({ message: "Accepted inquiry not found or you are not its provider" });
+    }
+    res.json({ message: "Service marked complete. The customer can now leave a rating." });
+  } catch (error) {
+    if (error.name === "CastError") return res.status(400).json({ message: "Invalid inquiry ID" });
+    res.status(500).json({ message: "Failed to complete service", error: error.message });
+  }
+};
+
+const rateServiceProvider = async (req, res) => {
+  try {
+    const rating = Number(req.body.rating);
+    const review = typeof req.body.review === "string" ? req.body.review.trim() : "";
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Choose a rating from 1 to 5 stars" });
+    }
+    if (review.length > 500) return res.status(400).json({ message: "Review must be 500 characters or fewer" });
+
+    const inquiry = await ServiceInquiry.findOneAndUpdate(
+      { _id: req.params.id, requester: req.user.userId, status: "completed", rating: null },
+      { $set: { rating, ratingReview: review } },
+      { new: true, runValidators: true }
+    );
+    if (!inquiry) {
+      const existing = await ServiceInquiry.findById(req.params.id).select("requester status rating");
+      if (!existing) return res.status(404).json({ message: "Service inquiry not found" });
+      if (String(existing.requester) !== String(req.user.userId)) {
+        return res.status(403).json({ message: "Only the customer can rate this service" });
+      }
+      if (existing.status !== "completed") {
+        return res.status(400).json({ message: "You can rate the provider after the service is marked complete" });
+      }
+      return res.status(409).json({ message: "You have already rated this service" });
+    }
+
+    const reputation = await recalculateReputation(inquiry.provider);
+    res.json({ message: "Your provider rating was saved", ...reputation });
+  } catch (error) {
+    if (error.name === "CastError") return res.status(400).json({ message: "Invalid inquiry ID" });
+    res.status(500).json({ message: "Failed to save provider rating", error: error.message });
+  }
+};
 module.exports = {
   getServiceOffers,
   saveServiceOffer,
   deleteServiceOffer,
   createServiceInquiry,
   getMyServiceInquiries,
+  completeServiceInquiry,
+  rateServiceProvider,
   respondToServiceInquiry,
 };

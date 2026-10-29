@@ -52,7 +52,7 @@ function Home() {
       <section className="home-section">
         <div className="home-section-heading">
           <div><p className="section-kicker">A little help goes a long way</p><h2 className="section-heading">Find help for everyday jobs</h2></div>
-          <Link to="/services" className="section-link">See open requests <span aria-hidden="true">→</span></Link>
+          <Link to="/services" className="section-link">See who needs help <span aria-hidden="true">→</span></Link>
         </div>
         <div className="category-tiles">
           {categories.map((name) => (
@@ -69,4 +69,3 @@ function Home() {
 }
 
 export default Home;
-
