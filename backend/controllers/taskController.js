@@ -72,14 +72,46 @@ const getTasks = async (req, res) => {
       filter.$or = [{ title: match }, { description: match }, { location: match }, { category: match }];
     }
 
-    const [tasks, totalItems] = await Promise.all([
-      Task.find(filter)
+    const requestedSort = ["dueSoonest", "dueLatest"].includes(req.query.sort)
+      ? req.query.sort
+      : "newest";
+    const totalItemsPromise = Task.countDocuments(filter);
+    let tasksPromise;
+
+    if (requestedSort === "newest") {
+      tasksPromise = Task.find(filter)
         .populate("postedBy", "name username")
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit),
-      Task.countDocuments(filter),
-    ]);
+        .limit(limit);
+    } else {
+      const datedFilter = { ...filter, dueDate: { $ne: null } };
+      const undatedFilter = {
+        $and: [filter, { $or: [{ dueDate: null }, { dueDate: { $exists: false } }] }],
+      };
+      tasksPromise = (async () => {
+        const datedCount = await Task.countDocuments(datedFilter);
+        const dueDateDirection = requestedSort === "dueSoonest" ? 1 : -1;
+        const datedTasks = skip < datedCount
+          ? await Task.find(datedFilter)
+            .populate("postedBy", "name username")
+            .sort({ dueDate: dueDateDirection, createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+          : [];
+        const remaining = limit - datedTasks.length;
+        const undatedTasks = remaining > 0
+          ? await Task.find(undatedFilter)
+            .populate("postedBy", "name username")
+            .sort({ createdAt: -1 })
+            .skip(Math.max(0, skip - datedCount))
+            .limit(remaining)
+          : [];
+        return [...datedTasks, ...undatedTasks];
+      })();
+    }
+
+    const [tasks, totalItems] = await Promise.all([tasksPromise, totalItemsPromise]);
 
     res.json({ tasks, pagination: paginationInfo(page, limit, totalItems) });
   } catch (error) {

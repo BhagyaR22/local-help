@@ -26,6 +26,10 @@ function Tasks({ mine = false }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const category = searchParams.get("category") || "";
   const search = searchParams.get("search") || "";
+  const requestedSort = searchParams.get("sort");
+  const sort = ["newest", "dueSoonest", "dueLatest"].includes(requestedSort)
+    ? requestedSort
+    : "newest";
   const parsedPage = Number.parseInt(searchParams.get("page"), 10);
   const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
@@ -36,6 +40,7 @@ function Tasks({ mine = false }) {
     const query = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
     if (category) query.set("category", category);
     if (search.trim()) query.set("search", search.trim());
+    if (sort !== "newest") query.set("sort", sort);
     setLoading(true);
     apiRequest(`${mine ? "/tasks/mine" : "/tasks"}?${query.toString()}`)
       .then((data) => {
@@ -52,7 +57,7 @@ function Tasks({ mine = false }) {
       });
 
     return () => { current = false; };
-  }, [mine, refreshKey, category, search, page]);
+  }, [mine, refreshKey, category, search, sort, page]);
 
   const visibleTasks = mine ? tasks : tasks.filter((task) => {
     const postedById = task.postedBy?._id || task.postedBy;
@@ -79,11 +84,16 @@ function Tasks({ mine = false }) {
       <div className="mx-auto max-w-5xl">
         <h1 className="text-3xl font-bold text-gray-800">{mine ? "My Activity" : "Available Tasks"}</h1>
         {mine && !getToken() && <p className="mt-4">Please <Link className="text-blue-600" to="/login">log in</Link> to see your activity.</p>}
-        {!mine && <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        {!mine && <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <input aria-label="Search tasks" value={search} onChange={(e) => updateFilter("search", e.target.value)} placeholder="Search tasks or locations" className="rounded border bg-white p-3" />
           <select aria-label="Filter by category" value={category} onChange={(e) => updateFilter("category", e.target.value)} className="rounded border bg-white p-3">
             <option value="">All categories</option>
             {SERVICE_CATEGORIES.map((item) => <option key={item}>{item}</option>)}
+          </select>
+          <select aria-label="Sort tasks by date" value={sort} onChange={(e) => updateFilter("sort", e.target.value)} className="rounded border bg-white p-3">
+            <option value="newest">Newest posted</option>
+            <option value="dueSoonest">Soonest needed</option>
+            <option value="dueLatest">Latest needed</option>
           </select>
         </div>}
         {loading && <p className="mt-6">Loading tasks...</p>}
