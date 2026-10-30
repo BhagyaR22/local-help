@@ -7,10 +7,26 @@ LocalHelp is a React/Vite frontend with a Node.js/Express API and MongoDB Atlas.
 - Node.js and npm
 - A MongoDB Atlas connection string
 
+## MongoDB databases
+
+LocalHelp uses two separate MongoDB Atlas databases. They can be on the same Atlas cluster, but their database names must stay different:
+
+- **Main database: `localhelp`** — used by `MONGO_URI` when you run `npm start`.
+- **Test database: `localhelp_test`** — used by `TEST_MONGO_URI` when you run `npm run start:test` or `npm run seed:test`.
+
+Use the same Atlas username, password, and cluster host in both connection strings, but change the database name after the host:
+
+```ini
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster-host>/localhelp?retryWrites=true&w=majority
+TEST_MONGO_URI=mongodb+srv://<username>:<password>@<cluster-host>/localhelp_test?retryWrites=true&w=majority
+```
+
+Replace the placeholders with your Atlas details. URL-encode special characters in the password. Never commit your real `.env` file.
+
 ## Configure the backend
 
 1. In `backend`, copy `.env.example` to `.env`.
-2. Set `MONGO_URI` to your normal MongoDB Atlas connection string and `JWT_SECRET` to a long random secret.
+2. Set `MONGO_URI` to the `localhelp` connection string, `TEST_MONGO_URI` to the separate `localhelp_test` connection string, and `JWT_SECRET` to a long random secret.
 
 ## Run locally
 
@@ -36,7 +52,7 @@ Open the local URL printed by Vite, usually `http://localhost:5173`.
 
 ## Generate separate test data
 
-Create a second database in MongoDB Atlas for testing, such as `localhelp_test`. Copy your Atlas connection string into `backend/.env` as `TEST_MONGO_URI`, changing its database name to `localhelp_test`. Keep the existing `MONGO_URI` unchanged. Do not use the same database name for both values.
+The `TEST_MONGO_URI` value must point to the separate `localhelp_test` database. Keep `MONGO_URI` pointed at the main `localhelp` database. `npm run seed:test` writes only to `TEST_MONGO_URI`; it does not seed the main database.
 
 From the `backend` folder, seed sample data:
 
