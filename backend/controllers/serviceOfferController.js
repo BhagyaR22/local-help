@@ -72,7 +72,7 @@ const saveServiceOffer = async (req, res) => {
           location: location.trim(),
         },
       },
-      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+      { returnDocument: "after", upsert: true, runValidators: true, setDefaultsOnInsert: true }
     ).populate("provider", "name username");
 
     res.status(200).json({ message: "Service price saved", offer });
@@ -182,7 +182,7 @@ const respondToServiceInquiry = async (req, res) => {
     const inquiry = await ServiceInquiry.findOneAndUpdate(
       { _id: req.params.id, provider: req.user.userId, status: "pending" },
       { $set: { status } },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
 
     if (!inquiry) {
@@ -201,7 +201,7 @@ const completeServiceInquiry = async (req, res) => {
     const inquiry = await ServiceInquiry.findOneAndUpdate(
       { _id: req.params.id, provider: req.user.userId, status: "accepted" },
       { $set: { status: "completed", completedAt: new Date() } },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
     if (!inquiry) {
       return res.status(404).json({ message: "Accepted inquiry not found or you are not its provider" });
@@ -225,7 +225,7 @@ const rateServiceProvider = async (req, res) => {
     const inquiry = await ServiceInquiry.findOneAndUpdate(
       { _id: req.params.id, requester: req.user.userId, status: "completed", rating: null },
       { $set: { rating, ratingReview: review } },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
     if (!inquiry) {
       const existing = await ServiceInquiry.findById(req.params.id).select("requester status rating");

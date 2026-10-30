@@ -162,7 +162,7 @@ const updateTask = async (req, res) => {
     const task = await Task.findOneAndUpdate(
       { _id: req.params.id, postedBy: req.user.userId, status: "open" },
       { $set: updates },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     ).populate("postedBy", "name username");
 
     if (!task) {
@@ -253,7 +253,7 @@ const claimTask = async (req, res) => {
           status: "claimed",
         },
       },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     )
       .populate("postedBy", "name firstName lastName username contactNumber")
       .populate("claimedBy", "name username");
@@ -291,14 +291,14 @@ const cancelTask = async (req, res) => {
       updatedTask = await Task.findOneAndUpdate(
         { _id: task._id, postedBy: req.user.userId, status: "claimed" },
         { $set: { status: "cancelled" } },
-        { new: true }
+        { returnDocument: "after" }
       );
       message = "Your request was cancelled";
     } else if (String(task.claimedBy) === currentUserId) {
       updatedTask = await Task.findOneAndUpdate(
         { _id: task._id, claimedBy: req.user.userId, status: "claimed" },
         { $set: { status: "open", claimedBy: null } },
-        { new: true }
+        { returnDocument: "after" }
       );
       message = "You released the task; it is open for another helper";
     } else {
@@ -321,7 +321,7 @@ const completeTask = async (req, res) => {
         claimedBy: req.user.userId,
       },
       { $set: { status: "completed" } },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     )
       .populate("postedBy", "name username")
       .populate("claimedBy", "name username");
@@ -365,7 +365,7 @@ const rateTaskHelper = async (req, res) => {
         claimedBy: { $ne: null },
       },
       { $set: { rating, ratingReview: review } },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
 
     if (!task) {
