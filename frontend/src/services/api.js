@@ -29,7 +29,9 @@ export async function apiRequest(path, options = {}) {
 
   if (!response.ok) {
     if (response.status === 401) clearSession();
-    throw new Error(data.message || "Request failed");
+    const error = new Error(data.message || "Request failed");
+    error.status = response.status;
+    throw error;
   }
 
   return data;

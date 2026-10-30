@@ -23,7 +23,7 @@ function Login() {
       saveSession(data.token, data.user);
       navigate(location.state?.from || "/tasks", { replace: true });
     } catch (err) {
-      setError(err.message);
+      setError(err.status === 401 ? "Incorrect email or password" : err.message || "Unable to log in. Please try again.");
     } finally {
       setBusy(false);
     }

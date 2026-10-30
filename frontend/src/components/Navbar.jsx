@@ -11,8 +11,10 @@ function MessageIcon() {
 }
 
 function NavItem({ to, label, count }) {
+    const { pathname } = useLocation();
+    const isActive = pathname === to || (to !== "/" && pathname.startsWith(`${to}/`));
   return (
-    <Link className="nav-link nav-item-link" to={to} aria-label={count ? `${label}, ${count} item${count === 1 ? "" : "s"}` : label}>
+    <Link className={`nav-link nav-item-link${isActive ? " active" : ""}`} to={to} aria-current={isActive ? "page" : undefined} aria-label={count ? `${label}, ${count} item${count === 1 ? "" : "s"}` : label}>
       <span className="nav-item-label">{label}</span>
       <span className="nav-message-wrap">
         <MessageIcon />
